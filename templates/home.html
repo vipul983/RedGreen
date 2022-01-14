@@ -1,0 +1,180 @@
+{% extends 'base.html' %}
+
+{% block title %}{{title}}{% endblock title %}
+{% block addcss %}
+<link rel="stylesheet" href="./static/home.css">
+{% endblock addcss %}
+{% block body %}
+<div class="containergame">
+<div class="containerleft">
+<h3> Current Game </h3>
+<div class="upcoming-game">
+    <div class="game-info">
+        <h4> Game-{{currentgame.id}} </h4>
+        {% comment %} <span> Game started at  : {{currentgame.starttime}}</span> {% endcomment %}
+       
+        </div >
+    </div>
+ <h3> Upcoming Game </h3>
+ 
+    {% for game in games %}
+    {% if game != currentgame %}
+    <div class="upcoming-game">
+    
+        <div class="game-info">
+        <h4> Game-{{game.id}} </h4>
+        {% comment %} <span> Game starts at  : {{game.starttime}}</span> {% endcomment %}
+        <span> Minimum amount : ₹10 </span>
+        </div >
+
+        {% comment %} <div class="playbutton">
+                <a href="/play/"> <button class="btn btn-success" >Play Now </button></a>
+        </div> {% endcomment %}
+    </div> 
+    {% endif %}
+    {% endfor %}
+    
+</div>
+<div class="containermiddle">
+    <h1>Game - {{currentgame.id}}</h1>
+     <span > Each game is of 3:00:00 Minutes ,No Bids after that</span>
+    <h2> <span id="time"></span> <span id="demo"></span> </h2>
+
+    {% comment %}  red and green button  {% endcomment %}
+    
+    <h2 ><span id="result"></span></h2>
+    <div class="game-cards" >
+    <div class="card-red bidpopup" onclick= showBidBox(this)  id="red"></div>
+    <div class="card-green bidpopup" onclick= showBidBox(this)  id="green"></div>
+    </div>
+
+    </div>
+  
+
+<div class="containerright">
+{% if messages %}
+   {% for message in messages %}
+   <p {% if message.tags %} class="alert alert-{{message.tags}} mb-5"{% endif %}>{{message}}</p>
+   {% endfor %}{% endif %}
+<div style="display : none" class="container-amount">
+
+<form id="gameform" method ="POST" class="form-inline" action="/submitgame/">
+  {% csrf_token %}
+  <div class="form-group mx-sm-3 mb-2">
+    <label for="inputPassword2" class="sr-only">Bid Amount</label>
+    <input type="text" class="form-control" value=0 name="amount" placeholder="Enter Bid Amount">
+  </div>
+  <input type="hidden" name="gameid" value="{{currentgame.id}}" id="hiddengameidInput">
+  <input type="hidden" name="color" value="red" id="hiddencolorInput">
+  <button  class="btn btn-primary mb-2">Confirm Bid</button>
+</form>
+</div>
+</div>
+</div>
+
+
+{% endblock body %}
+
+{% block script %}
+
+<script>
+    function showBidBox(e) {
+            // do something
+            
+            document.getElementsByClassName('container-amount')[0].style.display = 'block';
+            document.getElementById('hiddencolorInput').value = e.id;
+            {% comment %}  document.getElementById('hiddengameidInput').value = game.id; {% endcomment %}
+        };
+
+   
+  {% comment %} var currentdate = new Date();
+  var currtime = currentdate.getHours() + ":"  
+                + currentdate.getMinutes() + ":" 
+                + currentdate.getSeconds();
+  console.log(currtime,'{{currentgame.starttime}}')
+  if (currtime == '{{currentgame.starttime}}' ){
+    console.log("yes")
+  }else{
+    console.log("no")
+  }
+    {% endcomment %}
+    function disableF5(e) { if ((e.which || e.keyCode) == 116) e.preventDefault(); };
+  document.getElementById('time').innerHTML = "Remaining Time :";
+  var x=setInterval(function () {
+    
+    console.log('{{currentgame.starttime}}')
+    var today = new Date();
+    var seconds = today.getMinutes()*60 + today.getSeconds();
+    var threemin = 60*5;
+    var timeleft = threemin - seconds % threemin; 
+    
+    var result = parseInt(timeleft / 60) + ':' + timeleft % 60; 
+    document.getElementById('demo').innerHTML = result;
+    console.log(timeleft);
+    if(timeleft == 120){
+        $.ajax({url: "/getresult/{{currentgame.id}}", success: function(result){
+        console.log(result.isWinner)
+      
+        document.getElementById('result').innerHTML = result.isWinner;
+      
+        
+      
+      }});
+    }
+     if (timeleft <= 120) {
+      
+      
+      document.getElementById('time').innerHTML = "Next Game In :";
+      $('.game-cards').css('display', 'none');
+
+      // slight update to account for browsers not supporting e.which
+
+
+
+     
+      
+      
+      
+      
+   
+     }
+
+     if(timeleft == 1){
+       // To re-enable f5
+    /* jQuery < 1.7 */
+      $(document).unbind("keydown", disableF5);
+/* OR jQuery >= 1.7 */
+        $(document).off("keydown", disableF5);
+        $.ajax({url: "/creategame/{{currentgame.id}}", success: function(result){
+        
+      
+        location.reload();
+      
+        }});
+       
+
+     }
+  }, 1000);
+   {% comment %} if currentime == game[0].starttime
+    Remaining-time = game[0].starttime + 3 - currentime ;
+
+    if remainingtime == 0 {
+      
+      
+    }
+    {% endcomment %}
+  
+   {% comment %} setTimeout(function(){ 
+
+      $('#gameform').submit(function(){
+        $.ajax({url: "/getresult/", success: function(result){
+      
+      $("#result").html(result.isWinner);
+      }});
+      });
+      
+      
+   }, 20000); {% endcomment %}
+    
+</script>
+{% endblock script %}
